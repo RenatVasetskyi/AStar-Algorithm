@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -42,14 +41,14 @@ public class PathFinding : MonoBehaviour
 
             if (currentNode == targetNode)
             {
-                StartCoroutine(RetracePath(startNode, targetNode));
+                RetracePath(startNode, targetNode);
 
                 return;
             }
 
             foreach (Node neighbour in _grid.GetNeighbours(currentNode))
             {
-                if (!neighbour.Walkable && closedSet.Contains(neighbour))
+                if (!neighbour.Walkable || closedSet.Contains(neighbour))
                     continue;
 
                 int newMovementCostToNeighbour = currentNode.GCost + GetDistance(currentNode, neighbour);
@@ -67,19 +66,17 @@ public class PathFinding : MonoBehaviour
         }
     }
 
-    private IEnumerator RetracePath(Node startNode, Node endNode)
+    private void RetracePath(Node startNode, Node endNode)
     {
         List<Node> path = new();
 
         Node currentNode = endNode;
-
+        
         while (currentNode != startNode)
         {
             path.Add(currentNode);
             
             currentNode = currentNode.Parent;
-
-            yield return new WaitForSeconds(1);
         }
         
         path.Reverse();
