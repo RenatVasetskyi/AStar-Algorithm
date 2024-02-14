@@ -1,8 +1,12 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 public class PathFinding : MonoBehaviour
 {
+    private readonly HashSet<Node> _closedSet = new();
+    
     [SerializeField] private Grid _grid;
 
     [SerializeField] private Transform _start;
@@ -10,45 +14,42 @@ public class PathFinding : MonoBehaviour
 
     private void Update()
     {
-        FindPath(_start.position, _end.position);
+        if (Input.GetKeyDown(KeyCode.A))
+            FindPath(_start.position, _end.position);   
     }
 
     private void FindPath(Vector3 startPosition, Vector3 targetPosition)
     {
+        Stopwatch stopwatch = new();
+        stopwatch.Start();
+        
         Node startNode = _grid.GetNodeFromWorldPoint(startPosition);
         Node targetNode = _grid.GetNodeFromWorldPoint(targetPosition);
 
-        List<Node> openSet = new();
-        HashSet<Node> closedSet = new();
+        Heap<Node> openSet = new(_grid.MaxSize);
+        _closedSet.Clear();
         
         openSet.Add(startNode);
 
         while (openSet.Count > 0)
         {
-            Node currentNode = openSet[0];
-
-            for (int i = 1; i < openSet.Count; i++)
-            {
-                if (openSet[i].FCost < currentNode.FCost || openSet[i].FCost == currentNode
-                        .FCost && openSet[i].HCost < currentNode.HCost)
-                {
-                    currentNode = openSet[i];
-                }
-            }
-
-            openSet.Remove(currentNode);
-            closedSet.Add(currentNode);
+            Node currentNode = openSet.RemoveFirst();
+            
+            _closedSet.Add(currentNode);
 
             if (currentNode == targetNode)
             {
                 RetracePath(startNode, targetNode);
+                
+                stopwatch.Stop();
+                Debug.Log(stopwatch.ElapsedMilliseconds);
 
                 return;
             }
 
             foreach (Node neighbour in _grid.GetNeighbours(currentNode))
             {
-                if (!neighbour.Walkable || closedSet.Contains(neighbour))
+                if (!neighbour.Walkable || _closedSet.Contains(neighbour))
                     continue;
 
                 int newMovementCostToNeighbour = currentNode.GCost + GetDistance(currentNode, neighbour);
